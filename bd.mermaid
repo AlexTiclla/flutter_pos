@@ -1,325 +1,150 @@
-erDiagram
-    USUARIOS ||--o{ ROLES_USUARIOS : tiene
-    ROLES ||--o{ ROLES_USUARIOS : asignado
-    ROLES ||--o{ ROLES_PERMISOS : tiene
-    PERMISOS ||--o{ ROLES_PERMISOS : asignado
-    
-    USUARIOS ||--o{ VENTAS : registra
-    CLIENTES ||--o{ VENTAS : realiza
-    
-    PRODUCTOS ||--o{ DETALLE_VENTA : incluido_en
-    VENTAS ||--o{ DETALLE_VENTA : contiene
-    
-    CATEGORIAS ||--o{ PRODUCTOS : clasifica
-    CATEGORIAS ||--o{ CATEGORIAS : subcategoria
-    
-    PRODUCTOS ||--o{ INVENTARIO : tiene
-    INVENTARIO ||--o{ NOTIFICACIONES_INVENTARIO : genera
-    
-    PROVEEDORES ||--o{ COMPRAS_PROVEEDOR : suministra
-    COMPRAS_PROVEEDOR ||--o{ DETALLE_COMPRA : contiene
-    PRODUCTOS ||--o{ DETALLE_COMPRA : incluido_en
-    
-    DESCUENTOS ||--o{ DETALLE_VENTA : aplica_a
-    DESCUENTOS }o--o{ PRODUCTOS : aplica_a
-    DESCUENTOS }o--o{ CATEGORIAS : aplica_a
-    
-    USUARIOS ||--o{ CARRITOS : tiene
-    CLIENTES ||--o{ CARRITOS : tiene
-    CARRITOS ||--o{ DETALLE_CARRITO : contiene
-    PRODUCTOS ||--o{ DETALLE_CARRITO : incluido_en
-    
-    COMANDOS_VOZ ||--|| ACCIONES_SISTEMA : ejecuta
-    USUARIOS ||--o{ HISTORIAL_COMANDOS_VOZ : genera
-    COMANDOS_VOZ ||--o{ HISTORIAL_COMANDOS_VOZ : registrado_en
-    
-    CLIENTES ||--o{ HISTORIAL_RECOMENDACIONES : recibe
-    PRODUCTOS ||--o{ HISTORIAL_RECOMENDACIONES : recomendado
-    PRODUCTOS ||--o{ HISTORIAL_RECOMENDACIONES : origen
-    
-     %% Nuevas relaciones para REPORTES
-    USUARIOS ||--o{ REPORTES : crea
-    ROLES }o--o{ REPORTES : accede_a
-    
-    %% Nueva relación para CONFIGURACION_SISTEMA
-    USUARIOS ||--o{ HISTORIAL_CONFIGURACION : modifica
-    CONFIGURACION_SISTEMA ||--o{ HISTORIAL_CONFIGURACION : registra_cambios
-    
-    %% Nueva tabla para historial de configuración
-    HISTORIAL_CONFIGURACION {
-        int id_historial PK
-        int id_configuracion FK
-        int id_usuario FK
-        json cambios_realizados
-        datetime fecha_cambio
-        string ip_origen
+---
+config:
+  layout: elk
+---
+classDiagram
+    direction TB
+    class Usuario {
+        +id_usuario: int
+        +nombre: string
+        +apellido: string
+        +email: string
+        +password: string
+        +telefono: string
+        +estado: enum
+        +fecha_registro: datetime
     }
-    
-
-    USUARIOS {
-        int id_usuario PK
-        string nombre
-        string apellido
-        string email
-        string password
-        string telefono
-        string direccion
-        datetime fecha_registro
-        datetime ultimo_acceso
-        enum estado
-        string foto_perfil
+    class Rol {
+        +id_rol: int
+        +nombre_rol: string
+        +descripcion: text
+        +permisos: json
     }
-    
-    ROLES {
-        int id_rol PK
-        string nombre_rol
-        string descripcion
-        datetime fecha_creacion
+    class Producto {
+        +id_producto: int
+        +codigo_barras: string
+        +nombre_producto: string
+        +descripcion: text
+        +precio_compra: decimal
+        +precio_venta: decimal
+        +imagen: string
+        +estado: enum
+        +id_categoria: int
     }
-    
-    PERMISOS {
-        int id_permiso PK
-        string nombre_permiso
-        string descripcion
-        string modulo
+    class Categoria {
+        +id_categoria: int
+        +nombre_categoria: string
+        +descripcion: text
+        +imagen: string
     }
-    
-    ROLES_PERMISOS {
-        int id_rol_permiso PK
-        int id_rol FK
-        int id_permiso FK
+    class Inventario {
+        +id_inventario: int
+        +id_producto: int
+        +stock_actual: int
+        +stock_minimo: int
+        +fecha_actualizacion: datetime
     }
-    
-    ROLES_USUARIOS {
-        int id_rol_usuario PK
-        int id_usuario FK
-        int id_rol FK
-        datetime fecha_asignacion
+    class Proveedor {
+        +id_proveedor: int
+        +nombre_empresa: string
+        +contacto_nombre: string
+        +email: string
+        +telefono: string
+        +direccion: text
     }
-    
-    CATEGORIAS {
-        int id_categoria PK
-        string nombre_categoria
-        string descripcion
-        string imagen
-        boolean estado
-        int categoria_padre_id FK
+    class ProductoProveedor {
+        +id_producto_proveedor: int
+        +id_producto: int
+        +id_proveedor: int
+        +precio_compra: decimal
+        +codigo_proveedor: string
+        +es_proveedor_principal: boolean
+        +ultima_compra: datetime
     }
-    
-    PRODUCTOS {
-        int id_producto PK
-        string codigo_barras
-        string nombre_producto
-        string descripcion
-        decimal precio_compra
-        decimal precio_venta
-        string imagen
-        int id_categoria FK
-        enum estado
-        boolean destacado
-        datetime fecha_creacion
+    class Cliente {
+        +id_cliente: int
+        +nombre: string
+        +apellido: string
+        +email: string
+        +telefono: string
+        +nit_ci: string
     }
-    
-    INVENTARIO {
-        int id_inventario PK
-        int id_producto FK
-        int stock_actual
-        int stock_minimo
-        string ubicacion_almacen
-        datetime fecha_ultima_actualizacion
+    class Venta {
+        +id_venta: int
+        +numero_factura: string
+        +id_cliente: int
+        +id_usuario: int
+        +fecha_venta: datetime
+        +subtotal: decimal
+        +descuento: decimal
+        +impuestos: decimal
+        +total: decimal
+        +metodo_pago: enum
+        +estado: enum
     }
-    
-    NOTIFICACIONES_INVENTARIO {
-        int id_notificacion PK
-        int id_producto FK
-        enum tipo_notificacion
-        string mensaje
-        datetime fecha_notificacion
-        boolean leido
+    class DetalleVenta {
+        +id_detalle_venta: int
+        +id_venta: int
+        +id_producto: int
+        +cantidad: int
+        +precio_unitario: decimal
+        +descuento: decimal
+        +subtotal: decimal
     }
-    
-    PROVEEDORES {
-        int id_proveedor PK
-        string nombre_empresa
-        string contacto_nombre
-        string email
-        string telefono
-        string direccion
-        string notas
-        enum estado
+    class Descuento {
+        +id_descuento: int
+        +nombre: string
+        +tipo: enum
+        +valor: decimal
+        +fecha_inicio: datetime
+        +fecha_fin: datetime
+        +id_producto: int
+        +id_categoria: int
     }
-    
-    COMPRAS_PROVEEDOR {
-        int id_compra PK
-        int id_proveedor FK
-        int id_usuario FK
-        datetime fecha_compra
-        decimal total
-        enum estado
-        string notas
+    class PasarelaPago {
+        +id_pago: int
+        +id_venta: int
+        +proveedor: string
+        +referencia_externa: string
+        +monto: decimal
+        +estado: string
+        +fecha_pago: datetime
+        +datos_adicionales: json
     }
-    
-    DETALLE_COMPRA {
-        int id_detalle_compra PK
-        int id_compra FK
-        int id_producto FK
-        int cantidad
-        decimal precio_unitario
-        decimal subtotal
+    class ComandoVoz {
+        +id_comando: int
+        +frase_comando: string
+        +variaciones: json
+        +id_accion: int
+        +activo: boolean
     }
-    
-    CLIENTES {
-        int id_cliente PK
-        string nombre
-        string apellido
-        string email
-        string telefono
-        string direccion
-        string nit_ci
-        datetime fecha_registro
-        datetime ultima_compra
-        string notas
-        enum estado
+    class AccionSistema {
+        +id_accion: int
+        +nombre_accion: string
+        +endpoint_api: string
+        +parametros: json
+        +tipo_accion: string
     }
-    
-    VENTAS {
-        int id_venta PK
-        string numero_factura
-        int id_cliente FK
-        int id_usuario FK
-        datetime fecha_venta
-        decimal subtotal
-        decimal descuento_total
-        decimal impuestos
-        decimal total
-        enum metodo_pago
-        enum estado_pago
-        enum estado_venta
-        string notas
-        enum dispositivo
+    class Reporte {
+        +id_reporte: int
+        +nombre: string
+        +tipo: string
+        +formato: enum
+        +parametros: json
+        +id_usuario: int
+        +fecha_generacion: datetime
     }
-    
-    DETALLE_VENTA {
-        int id_detalle_venta PK
-        int id_venta FK
-        int id_producto FK
-        int cantidad
-        decimal precio_unitario
-        decimal descuento_unitario
-        decimal subtotal
-        string notas
-    }
-    
-    DESCUENTOS {
-        int id_descuento PK
-        string nombre_descuento
-        enum tipo
-        decimal valor
-        datetime fecha_inicio
-        datetime fecha_fin
-        int id_producto FK
-        int id_categoria FK
-        string codigo_promocion
-        int min_cantidad
-        int max_usos
-        int usos_actuales
-        boolean estado
-    }
-    
-    CARRITOS {
-        int id_carrito PK
-        int id_usuario FK
-        int id_cliente FK
-        datetime fecha_creacion
-        enum estado
-    }
-    
-    DETALLE_CARRITO {
-        int id_detalle_carrito PK
-        int id_carrito FK
-        int id_producto FK
-        int cantidad
-        datetime fecha_agregado
-    }
-    
-    COMANDOS_VOZ {
-        int id_comando PK
-        string frase_comando
-        json variaciones_comando
-        int id_accion FK
-        boolean activo
-    }
-    
-    ACCIONES_SISTEMA {
-        int id_accion PK
-        string nombre_accion
-        string descripcion
-        string endpoint_api
-        json parametros_requeridos
-        enum tipo_accion
-    }
-    
-    HISTORIAL_COMANDOS_VOZ {
-        int id_historial PK
-        int id_usuario FK
-        int id_comando FK
-        string comando_detectado
-        float precision_deteccion
-        string accion_ejecutada
-        string resultado
-        datetime fecha_hora
-        string dispositivo
-    }
-    
-    HISTORIAL_RECOMENDACIONES {
-        int id_recomendacion PK
-        int id_cliente FK
-        int id_producto_recomendado FK
-        int id_producto_origen FK
-        enum tipo_recomendacion
-        float score_confianza
-        boolean mostrado
-        boolean aceptado
-        datetime fecha_recomendacion
-    }
-    
-    REGLAS_ASOCIACION {
-        int id_regla PK
-        json productos_antecedente
-        json productos_consecuente
-        float soporte
-        float confianza
-        float lift
-        datetime fecha_generacion
-        boolean activo
-    }
-    
-    REPORTES {
-        int id_reporte PK
-        string nombre_reporte
-        string descripcion
-        enum tipo_reporte
-        json parametros
-        enum formato
-        boolean programado
-        string frecuencia
-        datetime ultimo_generado
-        datetime proximo_generado
-    }
-    
-    CONFIGURACION_SISTEMA {
-        int id_configuracion PK
-        string nombre_empresa
-        string logo
-        string direccion
-        string telefono
-        string email
-        string moneda
-        string formato_fecha
-        string zona_horaria
-        float impuesto_porcentaje
-        boolean habilitar_voz
-        float umbral_precision_voz
-        boolean habilitar_recomendaciones
-        float umbral_recomendaciones
-    }
+    Usuario "1" --o "*" Rol : tiene
+    Usuario "1" --o "*" Venta : registra
+    Cliente "1" --o "*" Venta : realiza
+    Venta "1" --o "*" DetalleVenta : contiene
+    Producto "1" --o "*" DetalleVenta : incluido_en
+    Categoria "1" --o "*" Producto : clasifica
+    Producto "1" --o "1" Inventario : tiene
+    Producto "1" --o "*" ProductoProveedor : suministrado_por
+    Proveedor "1" --o "*" ProductoProveedor : suministra
+    Descuento "*" --o "*" Producto : aplica_a
+    Descuento "*" --o "*" Categoria : aplica_a
+    ComandoVoz "1" --o "1" AccionSistema : ejecuta
+    Usuario "1" --o "*" Reporte : genera
+    Venta "1" --o "0..1" PasarelaPago : procesada_por
