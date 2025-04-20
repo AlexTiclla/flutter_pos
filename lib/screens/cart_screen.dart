@@ -1,10 +1,15 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_pos/screens/payment_screen.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../services/cart_provider.dart';
 import '../services/auth_provider.dart';
 import '../models/cart_item.dart';
 import '../widgets/cart_recommendations.dart';
 import '../screens/product_detail_screen.dart';
+import 'package:flutter_stripe/flutter_stripe.dart' as stripe;
 
 class CartScreen extends StatefulWidget {
   const CartScreen({Key? key}) : super(key: key);
@@ -31,6 +36,95 @@ class _CartScreenState extends State<CartScreen> {
         context,
         listen: false,
       ).loadUserCart(authProvider.user!.id);
+    }
+  }
+
+  Future<void> _procesarPagoDirecto() async {
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.user;
+
+    if (user == null || cartProvider.items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Usuario no autenticado o carrito vacío")),
+      );
+      return;
+    }
+
+    try {
+      // 1. Crear PaymentIntent
+      final response = await http.post(
+        Uri.parse('http://10.0.2.2:8000/api/v1/stripe/create-payment-intent'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'amount': (cartProvider.total * 100).toInt(),
+          'currency': 'usd',
+        }),
+      );
+
+      final jsonResponse = json.decode(response.body);
+      final clientSecret = jsonResponse['clientSecret'];
+
+      // 2. Inicializar hoja de pago
+      await stripe.Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: stripe.SetupPaymentSheetParameters(
+          paymentIntentClientSecret: clientSecret,
+          merchantDisplayName: 'POS Flutter',
+        ),
+      );
+
+      // 3. Mostrar hoja de pago
+      await stripe.Stripe.instance.presentPaymentSheet();
+
+      // 4. Registrar venta
+      final ventaRequest = {
+        "id_usuario": user.id,
+        "fecha_venta": DateTime.now().toIso8601String(),
+        "subtotal": cartProvider.total,
+        "descuento": 0,
+        "total": cartProvider.total,
+        "metodo_pago": "tarjeta",
+        "detalles":
+            cartProvider.items
+                .map(
+                  (item) => {
+                    "id_producto": item.idProducto,
+                    "cantidad": item.cantidad,
+                    "precio_unitario": item.precioUnitario,
+                    "descuento": 0,
+                    "subtotal": item.subtotal,
+                  },
+                )
+                .toList(),
+      };
+
+      final ventaResponse = await http.post(
+        Uri.parse('http://10.0.2.2:8000/api/v1/sales/'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(ventaRequest),
+      );
+
+      if (ventaResponse.statusCode != 201) {
+        throw Exception("Error al registrar venta: ${ventaResponse.body}");
+      }
+
+      // 5. Limpiar carrito
+      await cartProvider.clearCart(user.id);
+
+      // 6. Confirmación
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("✅ Pago y venta completados")),
+        );
+      }
+    } on stripe.StripeException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Stripe error: ${e.error.localizedMessage}")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("❌ Error inesperado: $e")));
     }
   }
 
@@ -302,19 +396,7 @@ class _CartScreenState extends State<CartScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed:
-                  cartProvider.isLoading
-                      ? null
-                      : () {
-                        // Aquí iría la lógica para proceder al pago
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Procesando pago (pendiente de implementar)',
-                            ),
-                          ),
-                        );
-                      },
+              onPressed: cartProvider.isLoading ? null : _procesarPagoDirecto,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
