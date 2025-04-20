@@ -102,13 +102,15 @@ class _HomeScreenState extends State<HomeScreen> {
   void _buscarPorCategoria(String categoria) {
     setState(() {
       _searchController.text = categoria;
-      // Aquí puedes también filtrar la lista de productos si deseas
     });
 
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('Filtrando por $categoria')));
-    _loadUserCart();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadUserCart();
+    });
   }
 
   Future<void> _loadFeaturedProducts() async {

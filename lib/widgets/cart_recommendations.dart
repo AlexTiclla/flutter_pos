@@ -57,6 +57,7 @@ class _CartRecommendationsState extends State<CartRecommendations> {
 
   Future<void> _loadRecommendations() async {
     if (widget.cartItems.isEmpty) {
+      if (!mounted) return;
       setState(() {
         _recommendations = [];
         _isLoading = false;
@@ -64,26 +65,27 @@ class _CartRecommendationsState extends State<CartRecommendations> {
       return;
     }
 
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _hasError = false;
     });
 
     try {
-      // Obtener los IDs de productos en el carrito
       final List<int> productIds =
           widget.cartItems.map((item) => item.idProducto).toList();
 
-      // Obtener recomendaciones basadas en el carrito
       final recommendations = await _recommendationService
           .getCartRecommendations(productIds);
 
+      if (!mounted) return; // 🔐 Verifica antes de setState
       setState(() {
         _recommendations =
             recommendations.take(widget.maxRecommendations).toList();
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return; // 🔐 Verifica antes de setState
       setState(() {
         _hasError = true;
         _isLoading = false;
