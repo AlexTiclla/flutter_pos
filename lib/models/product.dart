@@ -8,6 +8,7 @@ class Product {
   final bool estado;
   final int idCategoria;
   final double rating; // Añadido para las estrellas de calificación
+  final String? categoria; // 👈 nombre de la categoría
 
   Product({
     required this.id,
@@ -19,6 +20,7 @@ class Product {
     required this.estado,
     required this.idCategoria,
     this.rating = 0.0, // Valor por defecto
+    this.categoria, // 👈 nuevo
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -33,6 +35,7 @@ class Product {
       idCategoria: json['id_categoria'],
       // Para propósitos de ejemplo, generamos una calificación aleatoria
       rating: json['rating'] ?? (json['id'] % 5 + 1).toDouble(),
+      categoria: json['categoria'],
     );
   }
 

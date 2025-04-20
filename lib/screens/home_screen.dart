@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_pos/models/categories.dart';
+import 'package:flutter_pos/services/categoria_service.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_provider.dart';
 import '../services/product_service.dart';
 import '../models/product.dart';
 import 'login_screen.dart';
 import 'products_screen.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'ProductsByCategoryScreen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -14,6 +18,62 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  List<Categoria> _categorias = [];
+  final CategoriaService _categoriaService = CategoriaService();
+
+  String? _comandoPendiente;
+  final TextEditingController _searchController = TextEditingController();
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isListening = false;
+
+  Future<void> _startListening() async {
+    bool available = await _speech.initialize();
+    if (available) {
+      setState(() => _isListening = true);
+      _speech.listen(
+        localeId: 'es_BO',
+        onResult: (val) {
+          setState(() {
+            final recognized = val.recognizedWords;
+            setState(() {
+              _searchController.text = recognized;
+              _comandoPendiente = recognized; // ← Espera confirmación
+            });
+          });
+          // Aquí puedes filtrar productos si deseas
+        },
+      );
+    }
+  }
+
+  void _procesarComando(String texto) {
+    final comando = texto.toLowerCase();
+
+    if (comando.contains('carrito')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Abriendo carrito de compras...')),
+      );
+      // Aquí puedes navegar al carrito real si tienes esa pantalla
+    } else if (comando.contains('televisor')) {
+      _searchController.text = 'televisor';
+      // Aquí puedes ejecutar búsqueda automáticamente
+    } else if (comando.contains('ver todos')) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ProductsScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Comando no reconocido: \"$texto\"')),
+      );
+    }
+  }
+
+  void _stopListening() {
+    _speech.stop();
+    setState(() => _isListening = false);
+  }
+
   final ProductService _productService = ProductService();
   List<Product> _featuredProducts = [];
   bool _isLoading = true;
@@ -23,6 +83,29 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadFeaturedProducts();
+    _loadCategorias();
+  }
+
+  Future<void> _loadCategorias() async {
+    try {
+      final cats = await _categoriaService.getCategorias();
+      setState(() {
+        _categorias = cats;
+      });
+    } catch (e) {
+      print('Error al cargar categorías: $e');
+    }
+  }
+
+  void _buscarPorCategoria(String categoria) {
+    setState(() {
+      _searchController.text = categoria;
+      // Aquí puedes también filtrar la lista de productos si deseas
+    });
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('Filtrando por $categoria')));
   }
 
   Future<void> _loadFeaturedProducts() async {
@@ -250,16 +333,82 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Barra de búsqueda
-              TextField(
-                decoration: InputDecoration(
-                  hintText: 'Buscar productos...',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
+              // Barra de búsqueda con micrófono
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Buscar productos...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 0.0,
+                        ),
+                      ),
+                    ),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0.0),
-                ),
+                  const SizedBox(width: 8),
+                  if (_comandoPendiente != null)
+                    Card(
+                      color: Colors.deepPurple[50],
+                      margin: const EdgeInsets.only(bottom: 24),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '¿Confirmar comando detectado?',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '"$_comandoPendiente"',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    _procesarComando(_comandoPendiente!);
+                                    setState(() => _comandoPendiente = null);
+                                  },
+                                  icon: const Icon(Icons.check),
+                                  label: const Text('Confirmar'),
+                                ),
+                                const SizedBox(width: 12),
+                                OutlinedButton.icon(
+                                  onPressed:
+                                      () => setState(
+                                        () => _comandoPendiente = null,
+                                      ),
+                                  icon: const Icon(Icons.close),
+                                  label: const Text('Cancelar'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  IconButton(
+                    icon: Icon(
+                      _isListening ? Icons.stop : Icons.mic,
+                      color: Colors.deepPurple,
+                    ),
+                    onPressed: _isListening ? _stopListening : _startListening,
+                    tooltip: _isListening ? 'Detener' : 'Escuchar',
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
 
@@ -271,16 +420,32 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 16),
               SizedBox(
                 height: 100,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _buildCategoryCard('Electrónicos', Icons.devices),
-                    _buildCategoryCard('Ropa', Icons.checkroom),
-                    _buildCategoryCard('Alimentos', Icons.food_bank),
-                    _buildCategoryCard('Hogar', Icons.home),
-                    _buildCategoryCard('Deportes', Icons.sports_soccer),
-                  ],
-                ),
+                child:
+                    _categorias.isEmpty
+                        ? const Center(child: Text('Cargando categorías...'))
+                        : ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _categorias.length,
+                          itemBuilder: (context, index) {
+                            final cat = _categorias[index];
+                            return _buildCategoryCard(
+                              cat.name,
+                              Icons.category,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (_) => ProductsByCategoryScreen(
+                                          categoryId: cat.id,
+                                          categoryName: cat.name,
+                                        ),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
               ),
               const SizedBox(height: 24),
 
@@ -333,25 +498,36 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCategoryCard(String name, IconData icon) {
-    return Card(
-      elevation: 3,
-      margin: const EdgeInsets.only(right: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: Container(
-        width: 100,
-        padding: const EdgeInsets.all(8),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 40, color: Colors.deepPurple),
-            const SizedBox(height: 8),
-            Text(
-              name,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+  Widget _buildCategoryCard(String name, IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        elevation: 3,
+        margin: const EdgeInsets.only(right: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        child: SizedBox(
+          width: 100,
+          height: 100,
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 40, color: Colors.deepPurple),
+                const SizedBox(height: 6),
+                Flexible(
+                  child: Text(
+                    name,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -379,6 +555,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: double.infinity,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
+                  print("Error cargando imagen: $error");
                   return Container(
                     height: 120,
                     color: Colors.grey[300],
