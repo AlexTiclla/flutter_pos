@@ -3,142 +3,150 @@ config:
   layout: elk
 ---
 classDiagram
-    direction TB
+direction TB
     class Usuario {
-        +id_usuario: int
-        +nombre: string
-        +apellido: string
-        +email: string
-        +password: string
-        +telefono: string
-        +estado: enum
-        +fecha_registro: datetime
+	    +id_usuario: int
+	    +nombre: string
+	    +apellido: string
+	    +email: string
+	    +password: string
+	    +telefono: string
+	    +fecha_registro: datetime
+        +role_id: int
     }
     class Rol {
-        +id_rol: int
-        +nombre_rol: string
-        +descripcion: text
-        +permisos: json
+	    +id_rol: int
+	    +nombre_rol: string
+	    +descripcion: text
     }
     class Producto {
-        +id_producto: int
-        +codigo_barras: string
-        +nombre_producto: string
-        +descripcion: text
-        +precio_compra: decimal
-        +precio_venta: decimal
-        +imagen: string
-        +estado: enum
-        +id_categoria: int
+	    +id_producto: int
+	    +nombre_producto: string
+	    +descripcion: text
+	    +precio_compra: decimal
+	    +precio_venta: decimal
+	    +imagen: string
+	    +estado: enum
+	    +id_categoria: int
     }
     class Categoria {
-        +id_categoria: int
-        +nombre_categoria: string
-        +descripcion: text
-        +imagen: string
+	    +id_categoria: int
+	    +nombre_categoria: string
+	    +descripcion: text
     }
     class Inventario {
-        +id_inventario: int
-        +id_producto: int
-        +stock_actual: int
-        +stock_minimo: int
-        +fecha_actualizacion: datetime
+	    +id_inventario: int
+	    +id_producto: int
+	    +stock_actual: int
+	    +stock_minimo: int
+	    +fecha_actualizacion: datetime
     }
     class Proveedor {
-        +id_proveedor: int
-        +nombre_empresa: string
-        +contacto_nombre: string
-        +email: string
-        +telefono: string
-        +direccion: text
+	    +id_proveedor: int
+	    +nombre_empresa: string
+	    +contacto_nombre: string
+	    +email: string
+	    +telefono: string
+	    +direccion: text
     }
     class ProductoProveedor {
-        +id_producto_proveedor: int
-        +id_producto: int
-        +id_proveedor: int
-        +precio_compra: decimal
-        +codigo_proveedor: string
-        +es_proveedor_principal: boolean
-        +ultima_compra: datetime
-    }
-    class Cliente {
-        +id_cliente: int
-        +nombre: string
-        +apellido: string
-        +email: string
-        +telefono: string
-        +nit_ci: string
+	    +id_producto_proveedor: int
+	    +id_producto: int
+	    +id_proveedor: int
+	    +precio_compra: decimal
+	    +codigo_proveedor: string
+	    +es_proveedor_principal: boolean
+	    +ultima_compra: datetime
     }
     class Venta {
-        +id_venta: int
-        +numero_factura: string
-        +id_cliente: int
-        +id_usuario: int
-        +fecha_venta: datetime
-        +subtotal: decimal
-        +descuento: decimal
-        +impuestos: decimal
-        +total: decimal
-        +metodo_pago: enum
-        +estado: enum
+	    +id_venta: int
+	    +numero_factura: string
+	    +id_usuario: int
+	    +fecha_venta: datetime
+	    +subtotal: decimal
+	    +descuento: decimal
+	    +total: decimal
+	    +metodo_pago: enum
+	    +estado: enum
     }
     class DetalleVenta {
-        +id_detalle_venta: int
-        +id_venta: int
-        +id_producto: int
-        +cantidad: int
-        +precio_unitario: decimal
-        +descuento: decimal
-        +subtotal: decimal
+	    +id_detalle_venta: int
+	    +id_venta: int
+	    +id_producto: int
+	    +cantidad: int
+	    +precio_unitario: decimal
+	    +descuento: decimal
+	    +subtotal: decimal
     }
     class Descuento {
-        +id_descuento: int
-        +nombre: string
-        +tipo: enum
-        +valor: decimal
-        +fecha_inicio: datetime
-        +fecha_fin: datetime
-        +id_producto: int
-        +id_categoria: int
+	    +id_descuento: int
+	    +nombre: string
+	    +tipo: enum
+	    +valor: decimal
+	    +fecha_inicio: datetime
+	    +fecha_fin: datetime
+	    +id_producto: int
+	    +id_categoria: int
     }
     class PasarelaPago {
-        +id_pago: int
-        +id_venta: int
-        +proveedor: string
-        +referencia_externa: string
-        +monto: decimal
-        +estado: string
-        +fecha_pago: datetime
-        +datos_adicionales: json
+	    +id_pago: int
+	    +id_venta: int
+	    +proveedor: string
+	    +referencia_externa: string
+	    +monto: decimal
+	    +estado: string
+	    +fecha_pago: datetime
+	    +datos_adicionales: json
     }
     class ComandoVoz {
-        +id_comando: int
-        +frase_comando: string
-        +variaciones: json
-        +id_accion: int
-        +activo: boolean
+	    +id_comando: int
+	    +frase_comando: string
+	    +variaciones: json
+	    +id_accion: int
+	    +activo: boolean
     }
     class AccionSistema {
-        +id_accion: int
-        +nombre_accion: string
-        +endpoint_api: string
-        +parametros: json
-        +tipo_accion: string
+	    +id_accion: int
+	    +nombre_accion: string
+	    +endpoint_api: string
+	    +parametros: json
+	    +tipo_accion: string
     }
     class Reporte {
-        +id_reporte: int
-        +nombre: string
-        +tipo: string
-        +formato: enum
-        +parametros: json
-        +id_usuario: int
-        +fecha_generacion: datetime
+	    +id_reporte: int
+	    +nombre: string
+	    +tipo: string
+	    +formato: enum
+	    +parametros: json
+	    +id_usuario: int
+	    +fecha_generacion: datetime
     }
-    Usuario "1" --o "*" Rol : tiene
+    class CarritoCompra {
+	    +id_carrito: int
+	    +id_usuario: int
+	    +fecha_creacion: datetime
+	    +fecha_actualizacion: datetime
+	    +estado: enum
+	    +subtotal: decimal
+    }
+    class DetalleCarrito {
+	    +id_detalle_carrito: int
+	    +id_carrito: int
+	    +id_producto: int
+	    +cantidad: int
+	    +precio_unitario: decimal
+	    +descuento: decimal
+	    +subtotal: decimal
+    }
+
+    Usuario "*" --o "1" Rol : tiene
     Usuario "1" --o "*" Venta : registra
-    Cliente "1" --o "*" Venta : realiza
+    Usuario "1" --o "*" CarritoCompra : tiene
     Venta "1" --o "*" DetalleVenta : contiene
     Producto "1" --o "*" DetalleVenta : incluido_en
+    Producto "1" --o "*" DetalleCarrito : incluido_en
+    CarritoCompra "1" --o "*" DetalleCarrito : contiene
+    CarritoCompra "1" --o "0..1" Venta : se_convierte_en
     Categoria "1" --o "*" Producto : clasifica
     Producto "1" --o "1" Inventario : tiene
     Producto "1" --o "*" ProductoProveedor : suministrado_por

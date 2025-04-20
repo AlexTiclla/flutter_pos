@@ -39,6 +39,24 @@ class Product {
     );
   }
 
+  // Factory constructor para manejar respuestas del servicio de recomendaciones
+  factory Product.fromRecommendationJson(Map<String, dynamic> json) {
+    return Product(
+      id: json['id'],
+      nombre: json['nombre'],
+      descripcion: json['descripcion'] ?? '',
+      precioCompra:
+          0.0, // La API de recomendaciones no devuelve precio de compra
+      precioVenta: json['precio_venta']?.toDouble() ?? 0.0,
+      imagen: json['imagen'],
+      estado:
+          true, // Asumimos que todos los productos recomendados están activos
+      idCategoria: json['id_categoria'] ?? 0,
+      // Calificación aleatoria para las recomendaciones
+      rating: (json['id'] % 5 + 1).toDouble(),
+    );
+  }
+
   // Función para obtener una URL de imagen de placeholder si no existe
   String get imageUrl {
     if (imagen != null && imagen!.isNotEmpty) {

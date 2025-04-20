@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../services/product_service.dart';
+import '../services/cart_provider.dart';
+import '../services/auth_provider.dart';
 import '../widgets/simple_rating_bar.dart';
 
 class ProductsScreen extends StatefulWidget {
@@ -20,6 +23,17 @@ class _ProductsScreenState extends State<ProductsScreen> {
   void initState() {
     super.initState();
     _loadProducts();
+    _loadCartIfNeeded();
+  }
+
+  // Cargar el carrito del usuario si es necesario
+  Future<void> _loadCartIfNeeded() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+
+    if (authProvider.user != null && cartProvider.cart == null) {
+      await cartProvider.loadUserCart(authProvider.user!.id);
+    }
   }
 
   Future<void> _loadProducts() async {
@@ -139,6 +153,9 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cartProvider = Provider.of<CartProvider>(context);
+    final authProvider = Provider.of<AuthProvider>(context);
+
     return Card(
       elevation: 3,
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
@@ -229,18 +246,63 @@ class ProductCard extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            '${product.nombre} agregado al carrito',
-                          ),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    },
+                    onPressed:
+                        cartProvider.isLoading || authProvider.user == null
+                            ? null // Desactivar botón si está cargando o no hay usuario
+                            : () async {
+                              try {
+                                // Mostrar indicador de carga
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Row(
+                                      children: [
+                                        CircularProgressIndicator(
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                Colors.white,
+                                              ),
+                                        ),
+                                        SizedBox(width: 16),
+                                        Text('Agregando al carrito...'),
+                                      ],
+                                    ),
+                                    duration: Duration(seconds: 1),
+                                    backgroundColor: Colors.blue,
+                                  ),
+                                );
+
+                                // Agregar al carrito
+                                await cartProvider.addToCart(product.id, 1);
+
+                                if (context.mounted) {
+                                  // Mostrar mensaje de éxito
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        '${product.nombre} agregado al carrito',
+                                      ),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  // Mostrar mensaje de error
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Error: ${e.toString()}'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            },
                     icon: const Icon(Icons.shopping_cart),
-                    label: const Text('Agregar al Carrito'),
+                    label: Text(
+                      cartProvider.isLoading
+                          ? 'Cargando...'
+                          : 'Agregar al Carrito',
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepPurple,
                       foregroundColor: Colors.white,
@@ -251,6 +313,17 @@ class ProductCard extends StatelessWidget {
                     ),
                   ),
                 ),
+
+                // Mostrar error si existe
+                if (cartProvider.error != null &&
+                    cartProvider.error!.contains('${product.id}'))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      cartProvider.error!,
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ),
               ],
             ),
           ),

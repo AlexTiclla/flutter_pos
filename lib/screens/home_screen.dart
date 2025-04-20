@@ -4,11 +4,13 @@ import 'package:flutter_pos/services/categoria_service.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_provider.dart';
 import '../services/product_service.dart';
+import '../services/cart_provider.dart';
 import '../models/product.dart';
 import 'login_screen.dart';
 import 'products_screen.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'ProductsByCategoryScreen.dart';
+import 'cart_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -106,6 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('Filtrando por $categoria')));
+    _loadUserCart();
   }
 
   Future<void> _loadFeaturedProducts() async {
@@ -124,9 +127,27 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _loadUserCart() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (authProvider.user != null) {
+      await Provider.of<CartProvider>(
+        context,
+        listen: false,
+      ).loadUserCart(authProvider.user!.id);
+    }
+  }
+
+  void _navigateToCart() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CartScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
+    final cartProvider = Provider.of<CartProvider>(context);
     final user = authProvider.user;
 
     return Scaffold(
@@ -135,14 +156,35 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.shopping_cart),
-            onPressed: () {
-              // Navegar al carrito de compras
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Carrito de compras')),
-              );
-            },
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.shopping_cart),
+                onPressed: _navigateToCart,
+              ),
+              if (cartProvider.itemCount > 0)
+                Positioned(
+                  top: 5,
+                  right: 5,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '${cartProvider.itemCount}',
+                      style: const TextStyle(color: Colors.white, fontSize: 10),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),
@@ -226,12 +268,26 @@ class _HomeScreenState extends State<HomeScreen> {
                     ListTile(
                       leading: const Icon(Icons.shopping_cart),
                       title: const Text('Carrito de Compras'),
+                      trailing:
+                          cartProvider.itemCount > 0
+                              ? Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${cartProvider.itemCount}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              )
+                              : null,
                       onTap: () {
                         Navigator.pop(context);
-                        // Navegar a la pantalla de carrito
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Carrito de compras')),
-                        );
+                        _navigateToCart();
                       },
                     ),
                     ListTile(
