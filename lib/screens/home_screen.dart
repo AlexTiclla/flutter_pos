@@ -11,6 +11,7 @@ import 'products_screen.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'ProductsByCategoryScreen.dart';
 import 'cart_screen.dart';
+import '../services/voice_command_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -44,29 +45,6 @@ class _HomeScreenState extends State<HomeScreen> {
           });
           // Aquí puedes filtrar productos si deseas
         },
-      );
-    }
-  }
-
-  void _procesarComando(String texto) {
-    final comando = texto.toLowerCase();
-
-    if (comando.contains('carrito')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Abriendo carrito de compras...')),
-      );
-      // Aquí puedes navegar al carrito real si tienes esa pantalla
-    } else if (comando.contains('televisor')) {
-      _searchController.text = 'televisor';
-      // Aquí puedes ejecutar búsqueda automáticamente
-    } else if (comando.contains('ver todos')) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const ProductsScreen()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Comando no reconocido: \"$texto\"')),
       );
     }
   }
@@ -400,6 +378,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       decoration: InputDecoration(
                         hintText: 'Buscar productos...',
                         prefixIcon: const Icon(Icons.search),
+                        suffixIcon:
+                            _searchController.text.isNotEmpty
+                                ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    setState(() {
+                                      _searchController.clear();
+                                    });
+                                  },
+                                )
+                                : null,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -407,8 +396,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           vertical: 0.0,
                         ),
                       ),
+                      onChanged: (text) {
+                        setState(
+                          () {},
+                        ); // para que aparezca o desaparezca el botón
+                      },
                     ),
                   ),
+
                   const SizedBox(width: 8),
                   if (_comandoPendiente != null)
                     Card(
@@ -436,7 +431,32 @@ class _HomeScreenState extends State<HomeScreen> {
                               children: [
                                 ElevatedButton.icon(
                                   onPressed: () {
-                                    _procesarComando(_comandoPendiente!);
+                                    final voiceService = VoiceCommandService(
+                                      context: context,
+                                      categoriasDisponibles: _categorias,
+                                      onAbrirCarrito: _navigateToCart,
+                                      onVerTodos: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (_) => const ProductsScreen(),
+                                          ),
+                                        );
+                                      },
+                                      getAllProducts:
+                                          _productService.getProducts,
+                                      addToCart: (product) async {
+                                        await Provider.of<CartProvider>(
+                                          context,
+                                          listen: false,
+                                        ).addToCart(product.id, 1);
+                                      },
+                                    );
+
+                                    voiceService.procesar(_comandoPendiente!);
+
+                                    voiceService.procesar(_comandoPendiente!);
                                     setState(() => _comandoPendiente = null);
                                   },
                                   icon: const Icon(Icons.check),
