@@ -11,6 +11,7 @@ import 'products_screen.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'ProductsByCategoryScreen.dart';
 import 'cart_screen.dart';
+import 'product_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -78,6 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final ProductService _productService = ProductService();
   List<Product> _featuredProducts = [];
+  List<Product> _allProducts = []; // Todos los productos para búsqueda
   bool _isLoading = true;
   String? _error;
 
@@ -86,6 +88,59 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadFeaturedProducts();
     _loadCategorias();
+    _loadUserCart();
+
+    // Agregar listener para realizar búsqueda cuando cambia el texto
+    _searchController.addListener(_handleSearch);
+  }
+
+  @override
+  void dispose() {
+    // Limpiar controller al destruir el widget
+    _searchController.removeListener(_handleSearch);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // Lista de productos filtrados para búsqueda
+  List<Product> _filteredProducts = [];
+  bool _isSearching = false;
+
+  Future<void> _loadFeaturedProducts() async {
+    try {
+      final allProducts = await _productService.getProducts();
+      // Guardar todos los productos para búsqueda
+      setState(() {
+        _allProducts = allProducts;
+        _featuredProducts = allProducts.take(6).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _handleSearch() {
+    final query = _searchController.text.toLowerCase().trim();
+
+    if (query.isEmpty) {
+      setState(() {
+        _isSearching = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+      // Buscar en todos los productos, no solo en los destacados
+      _filteredProducts =
+          _allProducts
+              .where((product) => product.nombre.toLowerCase().contains(query))
+              .toList();
+    });
   }
 
   Future<void> _loadCategorias() async {
@@ -109,22 +164,6 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
     ).showSnackBar(SnackBar(content: Text('Filtrando por $categoria')));
     _loadUserCart();
-  }
-
-  Future<void> _loadFeaturedProducts() async {
-    try {
-      final allProducts = await _productService.getProducts();
-      // Mostrar solo 6 productos como destacados
-      setState(() {
-        _featuredProducts = allProducts.take(6).toList();
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
-    }
   }
 
   Future<void> _loadUserCart() async {
@@ -398,6 +437,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       decoration: InputDecoration(
                         hintText: 'Buscar productos...',
                         prefixIcon: const Icon(Icons.search),
+                        suffixIcon:
+                            _searchController.text.isNotEmpty
+                                ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() {
+                                      _isSearching = false;
+                                    });
+                                  },
+                                )
+                                : null,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -405,6 +456,30 @@ class _HomeScreenState extends State<HomeScreen> {
                           vertical: 0.0,
                         ),
                       ),
+                      onSubmitted: (value) {
+                        _handleSearch();
+                        // Desplazar hasta la sección de resultados
+                        if (_isSearching && _filteredProducts.isNotEmpty) {
+                          // Actualizar la UI para mostrar resultados
+                          setState(() {});
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Botón de búsqueda
+                  InkWell(
+                    onTap: () {
+                      _handleSearch();
+                      FocusScope.of(context).unfocus(); // Ocultar teclado
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.deepPurple,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.search, color: Colors.white),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -466,6 +541,96 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
+
+              // Mostrar resultados de búsqueda cuando está buscando
+              if (_isSearching && _searchController.text.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Text(
+                          'Resultados de búsqueda: ',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            '"${_searchController.text}"',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w400,
+                              fontStyle: FontStyle.italic,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    _filteredProducts.isEmpty
+                        ? Container(
+                          padding: const EdgeInsets.symmetric(vertical: 30.0),
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.search_off,
+                                size: 48,
+                                color: Colors.grey[500],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No se encontraron productos',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                        : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${_filteredProducts.length} productos encontrados',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    childAspectRatio: 0.75,
+                                    crossAxisSpacing: 10,
+                                    mainAxisSpacing: 10,
+                                  ),
+                              itemCount: _filteredProducts.length,
+                              itemBuilder: (context, index) {
+                                final product = _filteredProducts[index];
+                                return _buildProductCard(product);
+                              },
+                            ),
+                          ],
+                        ),
+                    const SizedBox(height: 16),
+                    const Divider(),
+                  ],
+                ),
+
               const SizedBox(height: 24),
 
               // Sección de categorías
@@ -593,6 +758,16 @@ class _HomeScreenState extends State<HomeScreen> {
     return GestureDetector(
       onTap: () {
         // Navegar a la página de detalle del producto
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder:
+                (context) => ProductDetailScreen(
+                  productId: product.id,
+                  productName: product.nombre,
+                ),
+          ),
+        );
       },
       child: Card(
         elevation: 3,

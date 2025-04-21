@@ -143,6 +143,7 @@ class _CartScreenState extends State<CartScreen> {
                   padding: const EdgeInsets.only(bottom: 8.0),
                   child: CartRecommendations(
                     cartItems: cartProvider.items,
+                    title: 'Productos que compran juntos (Apriori)',
                     onProductTap: (product) {
                       Navigator.push(
                         context,
