@@ -5,7 +5,7 @@ import '../models/venta_request.dart'; // crea este modelo
 class VentaService {
   static Future<void> registrarVenta(VentaRequest venta) async {
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:8000/api/v1/sales/'),
+      Uri.parse('https://flaskbackend-production-41b8.up.railway.app/api/v1/sales/'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode(venta.toJson()),
     );

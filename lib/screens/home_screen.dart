@@ -41,18 +41,99 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => _isListening = true);
       _speech.listen(
         localeId: 'es_BO',
+        listenFor: const Duration(seconds: 30),
+        pauseFor: const Duration(seconds: 5),
         onResult: (val) {
-          setState(() {
+          if (val.finalResult) {
             final recognized = val.recognizedWords;
+            if (recognized.isNotEmpty) {
+              setState(() {
+                _searchController.text = recognized;
+                _comandoPendiente = recognized;
+              });
+              _mostrarDialogoConfirmacion(_comandoPendiente!);
+            }
+          } else {
             setState(() {
-              _searchController.text = recognized;
-              _comandoPendiente = recognized; // ← Espera confirmación
+              _searchController.text = val.recognizedWords;
             });
-          });
-          // Aquí puedes filtrar productos si deseas
+          }
         },
       );
     }
+  }
+
+  Future<void> _mostrarDialogoConfirmacion(String comando) async {
+    _stopListening();
+    
+    setState(() {
+      _comandoPendiente = null;
+    });
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text('¿Confirmar comando detectado?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '"$comando"',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            OutlinedButton.icon(
+              icon: const Icon(Icons.close),
+              label: const Text('Cancelar'),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.check),
+              label: const Text('Confirmar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepPurple,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                final voiceService = VoiceCommandService(
+                  context: context,
+                  categoriasDisponibles: _categorias,
+                  onAbrirCarrito: _navigateToCart,
+                  onVerTodos: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ProductsScreen(),
+                      ),
+                    );
+                  },
+                  getAllProducts: _productService.getProducts,
+                  addToCart: (product) async {
+                    await Provider.of<CartProvider>(
+                      context,
+                      listen: false,
+                    ).addToCart(product.id, 1);
+                  },
+                );
+                
+                Navigator.of(dialogContext).pop();
+                voiceService.procesar(comando);
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _stopListening() {
@@ -479,85 +560,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
 
                   const SizedBox(width: 8),
-                  if (_comandoPendiente != null)
-                    Card(
-                      color: Colors.deepPurple[50],
-                      margin: const EdgeInsets.only(bottom: 24),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '¿Confirmar comando detectado?',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '"$_comandoPendiente"',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                ElevatedButton.icon(
-                                  onPressed: () {
-                                    final voiceService = VoiceCommandService(
-                                      context: context,
-                                      categoriasDisponibles: _categorias,
-                                      onAbrirCarrito: _navigateToCart,
-                                      onVerTodos: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder:
-                                                (_) => const ProductsScreen(),
-                                          ),
-                                        );
-                                      },
-                                      getAllProducts:
-                                          _productService.getProducts,
-                                      addToCart: (product) async {
-                                        await Provider.of<CartProvider>(
-                                          context,
-                                          listen: false,
-                                        ).addToCart(product.id, 1);
-                                      },
-                                    );
-
-                                    voiceService.procesar(_comandoPendiente!);
-
-                                    voiceService.procesar(_comandoPendiente!);
-                                    setState(() => _comandoPendiente = null);
-                                  },
-                                  icon: const Icon(Icons.check),
-                                  label: const Text('Confirmar'),
-                                ),
-                                const SizedBox(width: 12),
-                                OutlinedButton.icon(
-                                  onPressed:
-                                      () => setState(
-                                        () => _comandoPendiente = null,
-                                      ),
-                                  icon: const Icon(Icons.close),
-                                  label: const Text('Cancelar'),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
                   IconButton(
                     icon: Icon(
                       _isListening ? Icons.stop : Icons.mic,
                       color: Colors.deepPurple,
                     ),
-                    onPressed: _isListening ? _stopListening : _startListening,
+                    onPressed: () {
+                      if (_isListening) {
+                        _stopListening();
+                      } else {
+                        _startListening();
+                      }
+                    },
                     tooltip: _isListening ? 'Detener' : 'Escuchar',
                   ),
                 ],

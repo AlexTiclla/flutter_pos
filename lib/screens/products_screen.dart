@@ -26,7 +26,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
   void initState() {
     super.initState();
     _loadProducts();
-
     _loadCartIfNeeded();
     _searchController.addListener(_filterProducts);
   }
@@ -52,7 +51,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     product.descripcion!.toLowerCase().contains(query)))
             .toList();
       }
-
+    });
   }
 
   // Cargar el carrito del usuario si es necesario

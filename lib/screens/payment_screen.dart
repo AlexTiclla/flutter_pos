@@ -35,7 +35,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     try {
       // 1. Crear PaymentIntent desde backend
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/api/v1/stripe/create-payment-intent'),
+        Uri.parse('https://flaskbackend-production-41b8.up.railway.app/api/v1/stripe/create-payment-intent'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'amount': (cartProvider.total * 100).toInt(),
@@ -109,7 +109,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     };
 
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:8000/api/v1/sales/'),
+      Uri.parse('https://flaskbackend-production-41b8.up.railway.app/api/v1/sales/'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode(ventaRequest),
     );

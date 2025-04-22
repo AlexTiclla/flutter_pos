@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/categories.dart';
 
 class CategoriaService {
-  final String baseUrl = "http://10.0.2.2:8000/api/v1"; // ⬅️ Ajusta tu IP local
+  final String baseUrl = "https://flaskbackend-production-41b8.up.railway.app/api/v1"; // ⬅️ Ajusta tu IP local
 
   Future<List<Categoria>> getCategorias() async {
     final token = await _getToken(); // Si usas auth con JWT
