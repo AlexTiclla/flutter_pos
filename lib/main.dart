@@ -4,9 +4,17 @@ import 'services/auth_provider.dart';
 import 'services/cart_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  Stripe.publishableKey =
+      'pk_test_51REJFlKsyAycKsImQIsiUjVImKpncsObX6qsiF0Z17We6NQaH2Yn1kpaqc2fzYEyymxJjTKlsG77afAbGKylKVJW00zXXKm7HG'; // Reemplaza por tu clave pública de Stripe
+  // Stripe.merchantIdentifier = 'merchant.com.example'; // Solo si usas Apple Pay
+  // Stripe.urlScheme = 'flutterstripe'; // Solo si usas 3DS2 nativo
+
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
