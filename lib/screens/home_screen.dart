@@ -12,6 +12,8 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'ProductsByCategoryScreen.dart';
 import 'cart_screen.dart';
 import 'product_detail_screen.dart';
+import 'categories_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -299,8 +301,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () {
                         Navigator.pop(context);
                         // Navegar a la pantalla de categorías
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Categorías')),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CategoriesScreen(),
+                          ),
                         );
                       },
                     ),
@@ -346,8 +351,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () {
                         Navigator.pop(context);
                         // Navegar a la pantalla de perfil
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Mi perfil')),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ProfileScreen(),
+                          ),
                         );
                       },
                     ),
