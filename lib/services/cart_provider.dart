@@ -171,6 +171,18 @@ class CartProvider with ChangeNotifier {
     }
   }
 
+  Future<void> clearCart(int userId) async {
+    try {
+      await _cartService.clearCartBackend(userId);
+    } catch (e) {
+      print("Error limpiando carrito en backend: $e");
+    }
+
+    _items = [];
+    _cart = null;
+    notifyListeners();
+  }
+
   // Método auxiliar para cambiar el estado de carga
   void _setLoading(bool loading) {
     _isLoading = loading;

@@ -209,4 +209,18 @@ class CartService {
       throw Exception('Error de conexión: $e');
     }
   }
+
+  Future<void> clearCartBackend(int userId) async {
+    final url = Uri.parse(
+      'http://10.0.2.2:8000/api/v1/carts/user/$userId/clear',
+    );
+
+    final response = await http.delete(url);
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Error al limpiar el carrito del backend: ${response.body}',
+      );
+    }
+  }
 }

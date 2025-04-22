@@ -26,6 +26,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   void initState() {
     super.initState();
     _loadProducts();
+
     _loadCartIfNeeded();
     _searchController.addListener(_filterProducts);
   }
@@ -51,6 +52,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     product.descripcion!.toLowerCase().contains(query)))
             .toList();
       }
+
+
+    // Ejecutar después del build inicial
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadCartIfNeeded();
+
     });
   }
 
