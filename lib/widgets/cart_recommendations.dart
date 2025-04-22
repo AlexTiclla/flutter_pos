@@ -75,18 +75,13 @@ class _CartRecommendationsState extends State<CartRecommendations> {
       final List<int> productIds =
           widget.cartItems.map((item) => item.idProducto).toList();
 
-
-      // Obtener recomendaciones basadas en el carrito usando el algoritmo Apriori
-
       final recommendations = await _recommendationService
-          .getRecommendationsForCart(
-            productIds,
-            maxRecommendations: widget.maxRecommendations,
-          );
+          .getCartRecommendations(productIds);
 
       if (!mounted) return; // 🔐 Verifica antes de setState
       setState(() {
-        _recommendations = recommendations;
+        _recommendations =
+            recommendations.take(widget.maxRecommendations).toList();
         _isLoading = false;
       });
     } catch (e) {

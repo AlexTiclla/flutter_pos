@@ -26,36 +26,6 @@ class AuthService {
     print('Base URL configurada: $baseUrl');
   }
 
-  // Método para convertir errores técnicos en mensajes amigables
-  String _getFriendlyErrorMessage(dynamic error, String context) {
-    String errorStr = error.toString();
-    
-    // Para errores de conexión
-    if (errorStr.contains('SocketException') || errorStr.contains('Connection refused')) {
-      return 'No se pudo conectar al servidor. Por favor verifica tu conexión a internet.';
-    }
-    
-    // Para errores de inicio de sesión
-    if (context == 'login') {
-      if (errorStr.contains('Credenciales incorrectas')) {
-        return 'El correo electrónico o la contraseña son incorrectos. Por favor verifica tus datos.';
-      }
-      if (errorStr.contains('Token inválido') || errorStr.contains('no autenticado')) {
-        return 'Tu sesión ha expirado. Por favor inicia sesión nuevamente.';
-      }
-    }
-    
-    // Para errores de registro
-    if (context == 'register') {
-      if (errorStr.contains('already exists') || errorStr.contains('ya está registrado')) {
-        return 'Este correo electrónico ya está registrado. Por favor utiliza otro o inicia sesión.';
-      }
-    }
-    
-    // Mensaje genérico para otros errores
-    return 'Ocurrió un error inesperado. Por favor intenta nuevamente más tarde.';
-  }
-
   // Método para iniciar sesión
   Future<AuthToken> login(String email, String password) async {
     try {
@@ -76,20 +46,11 @@ class AuthService {
 
         return authToken;
       } else {
-        // Intentar analizar el cuerpo para un mensaje de error más específico
-        try {
-          final errorData = jsonDecode(response.body);
-          if (errorData['detail'] != null) {
-            throw Exception(_getFriendlyErrorMessage('Credenciales incorrectas: ${errorData['detail']}', 'login'));
-          }
-        } catch (_) {}
-        
-        // Si no podemos analizar el cuerpo o no tiene un campo 'detail'
-        throw Exception(_getFriendlyErrorMessage('Credenciales incorrectas', 'login'));
+        throw Exception('Credenciales incorrectas: ${response.body}');
       }
     } catch (e) {
       print('Error en login: $e');
-      throw Exception(_getFriendlyErrorMessage(e, 'login'));
+      throw Exception('Error de conexión: $e');
     }
   }
 
@@ -120,19 +81,14 @@ class AuthService {
       if (response.statusCode == 201) {
         return User.fromJson(jsonDecode(response.body));
       } else {
-        // Intentar analizar el cuerpo para un mensaje de error más específico
-        try {
-          final errorData = jsonDecode(response.body);
-          if (errorData['detail'] != null) {
-            throw Exception(_getFriendlyErrorMessage(errorData['detail'], 'register'));
-          }
-        } catch (_) {}
-        
-        throw Exception(_getFriendlyErrorMessage('Error al registrar usuario', 'register'));
+        final errorData = jsonDecode(response.body);
+        throw Exception(
+          errorData['detail'] ?? 'Error al registrar usuario: ${response.body}',
+        );
       }
     } catch (e) {
       print('Error en register: $e');
-      throw Exception(_getFriendlyErrorMessage(e, 'register'));
+      throw Exception('Error de conexión: $e');
     }
   }
 
@@ -142,7 +98,7 @@ class AuthService {
       final token = await storage.read(key: 'token');
 
       if (token == null) {
-        throw Exception(_getFriendlyErrorMessage('No hay sesión activa', 'profile'));
+        throw Exception('No hay sesión activa');
       }
 
       print(
@@ -163,11 +119,11 @@ class AuthService {
       if (response.statusCode == 200) {
         return User.fromJson(jsonDecode(response.body));
       } else {
-        throw Exception(_getFriendlyErrorMessage('Error al obtener perfil de usuario: ${response.body}', 'profile'));
+        throw Exception('Error al obtener perfil de usuario: ${response.body}');
       }
     } catch (e) {
       print('Error en getCurrentUser: $e');
-      throw Exception(_getFriendlyErrorMessage(e, 'profile'));
+      throw Exception('Error de conexión: $e');
     }
   }
 

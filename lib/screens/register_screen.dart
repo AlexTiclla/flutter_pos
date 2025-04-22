@@ -231,24 +231,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     // Mensaje de error
                     if (authProvider.error != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                        margin: const EdgeInsets.only(bottom: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.red.shade200)
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.error_outline, color: Colors.red.shade700),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                _formatErrorMessage(authProvider.error!),
-                                style: TextStyle(color: Colors.red.shade700),
-                              ),
-                            ),
-                          ],
+                        padding: const EdgeInsets.all(8),
+                        color: Colors.red.withOpacity(0.1),
+                        child: Text(
+                          authProvider.error!,
+                          style: const TextStyle(color: Colors.red),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     const SizedBox(height: 16),
@@ -298,13 +286,4 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
-}
-
-// Función para dar formato amigable a los mensajes de error
-String _formatErrorMessage(String error) {
-  // Eliminar prefijos técnicos como 'Exception: ' o 'Error: '
-  final formattedError = error.replaceAll(RegExp(r'^(Exception|Error): '), '');
-  
-  // Si el error ya es amigable, devolverlo como está
-  return formattedError;
 }

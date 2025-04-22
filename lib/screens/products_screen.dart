@@ -5,7 +5,6 @@ import '../services/product_service.dart';
 import '../services/cart_provider.dart';
 import '../services/auth_provider.dart';
 import '../widgets/simple_rating_bar.dart';
-import '../config.dart';
 
 class ProductsScreen extends StatefulWidget {
   const ProductsScreen({Key? key}) : super(key: key);
@@ -17,47 +16,17 @@ class ProductsScreen extends StatefulWidget {
 class _ProductsScreenState extends State<ProductsScreen> {
   final ProductService _productService = ProductService();
   List<Product> _products = [];
-  List<Product> _filteredProducts = [];
   bool _isLoading = true;
   String? _error;
-  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadProducts();
 
-    _loadCartIfNeeded();
-    _searchController.addListener(_filterProducts);
-  }
-
-  @override
-  void dispose() {
-    _searchController.removeListener(_filterProducts);
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  // Función para filtrar productos según la búsqueda
-  void _filterProducts() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      if (query.isEmpty) {
-        _filteredProducts = List.from(_products);
-      } else {
-        _filteredProducts = _products
-            .where((product) =>
-                product.nombre.toLowerCase().contains(query) ||
-                (product.descripcion != null &&
-                    product.descripcion!.toLowerCase().contains(query)))
-            .toList();
-      }
-
-
     // Ejecutar después del build inicial
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadCartIfNeeded();
-
     });
   }
 
@@ -81,7 +50,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
       final products = await _productService.getProducts();
       setState(() {
         _products = products;
-        _filteredProducts = List.from(products);
         _isLoading = false;
       });
     } catch (e) {
@@ -149,7 +117,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 horizontal: 8.0,
               ),
               child: TextField(
-                controller: _searchController,
                 decoration: InputDecoration(
                   hintText: 'Buscar productos...',
                   prefixIcon: const Icon(Icons.search),
@@ -157,38 +124,24 @@ class _ProductsScreenState extends State<ProductsScreen> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   contentPadding: const EdgeInsets.symmetric(vertical: 0.0),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () {
-                            _searchController.clear();
-                          },
-                        )
-                      : null,
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
+            const Padding(
+              padding: EdgeInsets.all(8.0),
               child: Text(
-                _searchController.text.isEmpty
-                    ? 'Todos los Productos'
-                    : 'Resultados de búsqueda (${_filteredProducts.length})',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                'Todos los Productos',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
             Expanded(
-              child: _filteredProducts.isEmpty
-                  ? const Center(
-                      child: Text('No se encontraron productos'),
-                    )
-                  : ListView.builder(
-                      itemCount: _filteredProducts.length,
-                      itemBuilder: (context, index) {
-                        final product = _filteredProducts[index];
-                        return ProductCard(product: product);
-                      },
-                    ),
+              child: ListView.builder(
+                itemCount: _products.length,
+                itemBuilder: (context, index) {
+                  final product = _products[index];
+                  return ProductCard(product: product);
+                },
+              ),
             ),
           ],
         ),

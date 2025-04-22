@@ -3,7 +3,6 @@ import 'package:flutter_pos/services/cart_provider.dart';
 import 'package:provider/provider.dart';
 import '../models/product.dart';
 import '../services/product_service.dart';
-import '../utils/text_decoder.dart';
 
 class ProductsByCategoryScreen extends StatefulWidget {
   final int categoryId;
@@ -52,11 +51,9 @@ class _ProductsByCategoryScreenState extends State<ProductsByCategoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final decodedCategoryName = TextDecoder.decodeText(widget.categoryName);
-
     return Scaffold(
       appBar: AppBar(
-        title: Text('Productos: $decodedCategoryName'),
+        title: Text('Productos: ${widget.categoryName}'),
         backgroundColor: Colors.deepPurple,
       ),
       body:
@@ -110,7 +107,7 @@ class _ProductsByCategoryScreenState extends State<ProductsByCategoryScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                TextDecoder.decodeText(product.nombre),
+                                product.nombre,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
