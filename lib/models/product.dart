@@ -1,3 +1,5 @@
+import '../utils/text_decoder.dart';
+
 class Product {
   final int id;
   final String nombre;
@@ -26,8 +28,8 @@ class Product {
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
       id: json['id'],
-      nombre: json['nombre'],
-      descripcion: json['descripcion'],
+      nombre: TextDecoder.decodeText(json['nombre'] ?? ''),
+      descripcion: json['descripcion'] != null ? TextDecoder.decodeText(json['descripcion']) : null,
       precioCompra: json['precio_compra'].toDouble(),
       precioVenta: json['precio_venta'].toDouble(),
       imagen: json['imagen'],
@@ -35,7 +37,7 @@ class Product {
       idCategoria: json['id_categoria'],
       // Para propósitos de ejemplo, generamos una calificación aleatoria
       rating: json['rating'] ?? (json['id'] % 5 + 1).toDouble(),
-      categoria: json['categoria'],
+      categoria: json['categoria'] != null ? TextDecoder.decodeText(json['categoria']) : null,
     );
   }
 
@@ -43,8 +45,8 @@ class Product {
   factory Product.fromRecommendationJson(Map<String, dynamic> json) {
     return Product(
       id: json['id'],
-      nombre: json['nombre'],
-      descripcion: json['descripcion'] ?? '',
+      nombre: TextDecoder.decodeText(json['nombre'] ?? ''),
+      descripcion: json['descripcion'] != null ? TextDecoder.decodeText(json['descripcion']) : '',
       precioCompra:
           0.0, // La API de recomendaciones no devuelve precio de compra
       precioVenta: json['precio_venta']?.toDouble() ?? 0.0,

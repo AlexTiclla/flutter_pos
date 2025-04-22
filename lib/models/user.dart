@@ -1,3 +1,5 @@
+import '../utils/text_decoder.dart';
+
 class User {
   final int id;
   final String nombre;
@@ -20,8 +22,8 @@ class User {
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'],
-      nombre: json['nombre'],
-      apellido: json['apellido'],
+      nombre: TextDecoder.decodeText(json['nombre'] ?? ''),
+      apellido: TextDecoder.decodeText(json['apellido'] ?? ''),
       email: json['email'],
       telefono: json['telefono'],
       fechaRegistro: json['fecha_registro'],
@@ -52,7 +54,10 @@ class UserRole {
   UserRole({required this.id, required this.name});
 
   factory UserRole.fromJson(Map<String, dynamic> json) {
-    return UserRole(id: json['id'], name: json['name']);
+    return UserRole(
+      id: json['id'], 
+      name: TextDecoder.decodeText(json['name'] ?? '')
+    );
   }
 
   Map<String, dynamic> toJson() {

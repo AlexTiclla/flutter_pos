@@ -1,3 +1,5 @@
+import '../utils/text_decoder.dart';
+
 class Categoria {
   final int id;
   final String name;
@@ -8,8 +10,8 @@ class Categoria {
   factory Categoria.fromJson(Map<String, dynamic> json) {
     return Categoria(
       id: json['id'],
-      name: json['name'],
-      description: json['description'],
+      name: TextDecoder.decodeText(json['name'] ?? ''),
+      description: json['description'] != null ? TextDecoder.decodeText(json['description']) : null,
     );
   }
 }
